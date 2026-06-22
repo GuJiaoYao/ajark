@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบฟอร์มบันทึกข้อมูลนักเรียน</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body { font-family: 'ChulaCharasNew', 'Sarabun', sans-serif; }
+    </style>
+</head>
+<body class="bg-light">
+
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card shadow p-4 rounded-3 bg-white">
+                    <h3 class="text-center mb-4 text-primary fw-bold">ฟอร์มบันทึกข้อมูลนักเรียน</h3>
+                    
+                    <form id="studentForm">
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="prefix" class="form-label fw-semibold">คำนำหน้าชื่อ</label>
+                                <select class="form-select" id="prefix" required>
+                                    <option value="" selected disabled>เลือก...</option>
+                                    <option value="เด็กชาย">เด็กชาย</option>
+                                    <option value="เด็กหญิง">เด็กหญิง</option>
+                                    <option value="นาย">นาย</option>
+                                    <option value="นางสาว">นางสาว</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="firstName" class="form-label fw-semibold">ชื่อ</label>
+                                <input type="text" class="form-control" id="firstName" required placeholder="ชื่อจริง">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="lastName" class="form-label fw-semibold">นามสกุล</label>
+                                <input type="text" class="form-control" id="lastName" required placeholder="นามสกุล">
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <label for="grade" class="form-label fw-semibold">ชั้นมัธยมฯ ปีที่</label>
+                                <select class="form-select" id="grade" required>
+                                    <option value="" selected disabled>เลือก...</option>
+                                    <option value="1">ม.1</option>
+                                    <option value="2">ม.2</option>
+                                    <option value="3">ม.3</option>
+                                    <option value="4">ม.4</option>
+                                    <option value="5">ม.5</option>
+                                    <option value="6">ม.6</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="room" class="form-label fw-semibold">ห้อง</label>
+                                <input type="number" class="form-control" id="room" min="1" required placeholder="เช่น 1">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="number" class="form-label fw-semibold">เลขที่</label>
+                                <input type="number" class="form-control" id="number" min="1" required placeholder="เช่น 15">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 py-2.5 fw-bold">บันทึกข้อมูลลงระบบ</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // วาง URL ของ Apps Script ที่ได้จากการเพิ่มการทำงาน (Deploy) ไว้ที่นี่
+        const scriptUrl = "https://script.google.com/macros/s/AKfycbyApWUjmXFI7yf80A0hQvKK0eEBtAFp5hHpPokR5r78qrYxwxMRSBdaq7iFCBv1b-FS/exec";
+
+        document.getElementById('studentForm').addEventListener('submit', function(e) {
+            e.preventDefault(); // บล็อกการเคลียร์หน้าฟอร์มเดิม
+
+            // 1. เรียก SweetAlert โชว์สถานะ "กำลังโหลด"
+            Swal.fire({
+                title: 'กำลังบันทึกข้อมูล...',
+                text: 'ระบบกำลังส่งข้อมูลไปยัง Google Sheets กรุณารอสักครู่',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading(); // เปิดไอคอนหมุนๆ Loading
+                }
+            });
+
+            // 2. ดึงค่าต่างๆ ออกมาจากฟอร์มกรอกข้อมูล
+            const prefix = document.getElementById('prefix').value;
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            const grade = document.getElementById('grade').value;
+            const room = document.getElementById('room').value;
+            const number = document.getElementById('number').value;
+
+            // 3. แพ็คข้อมูลใส่ Query String เพื่อใช้กับ JSONP พร้อมกำหนด callback=handleResponse
+            const queryString = `?callback=handleResponse` 
+                + `&prefix=${encodeURIComponent(prefix)}`
+                + `&firstName=${encodeURIComponent(firstName)}`
+                + `&lastName=${encodeURIComponent(lastName)}`
+                + `&grade=${encodeURIComponent(grade)}`
+                + `&room=${encodeURIComponent(room)}`
+                + `&number=${encodeURIComponent(number)}`;
+
+            // 4. เริ่มส่งข้อมูลแบบ JSONP โดยสร้างแท็ก <script> ไดนามิก เพื่อเลี่ยงปัญหา Cross-Origin (CORS)
+            const script = document.createElement('script');
+            script.src = scriptUrl + queryString;
+            script.id = 'jsonpScript';
+            
+            // แทรกแท็กสคริปต์ลงในหน้าเว็บเพื่อสั่งยิงคำขอไปยัง Google Apps Script
+            document.body.appendChild(script);
+        });
+
+        // ฟังก์ชันที่จะถูกเรียกใช้อัตโนมัติเมื่อฝั่ง Google Apps Script บันทึกเสร็จและตอบกลับมา
+        function handleResponse(response) {
+            // ทำลายแท็กสคริปต์ชั่วคราวทิ้ง เพื่อสุขอนามัยที่ดีของหน้าเว็บ
+            const oldScript = document.getElementById('jsonpScript');
+            if (oldScript) oldScript.remove();
+
+            // เช็คว่าสำเร็จหรือไม่
+            if (response && response.status === 'success') {
+                // เปลี่ยนสถานะ SweetAlert เป็น "บันทึกสำเร็จ"
+                Swal.fire({
+                    icon: 'success',
+                    title: 'บันทึกสำเร็จ!',
+                    text: 'ข้อมูลนักเรียนถูกบันทึกลงฐานข้อมูลเรียบร้อยแล้ว',
+                    confirmButtonText: 'ตกลง',
+                    confirmButtonColor: '#0d6efd'
+                }).then(() => {
+                    document.getElementById('studentForm').reset(); // เคลียร์ฟอร์มให้ว่างพร้อมกรอกคนต่อไป
+                });
+            } else {
+                // กรณีผิดพลาด แจ้งเตือนแบบ Error
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: response.message || 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง',
+                    confirmButtonText: 'รับทราบ'
+                });
+            }
+        }
+    </script>
+</body>
+</html>
